@@ -32,14 +32,14 @@ const blockLShape = [[0,1], [1,1], [2,1], [0,2]];
 const blockIShape = [[0,2], [1,2], [2,2], [3,2]];
 
 const current = {
-    shape: blockTShape,
-    midPoint: 2,
+    shape: blockJShape,
+    midPoint: 1,
     locationX: 4,
     locationY: -1,
     rotate: function(isClockwise) {
         let sign = isClockwise ? 1 : -1;
-        let rotatedShape = new Array(4);
-        for (let i = 0; i < 4; i++) {
+        let rotatedShape = new Array(this.shape.length);
+        for (let i = 0; i < this.shape.length; i++) {
             let x = -sign * (this.shape[i][1] - this.midPoint) + this.midPoint;
             let y = sign * (this.shape[i][0] - this.midPoint) + this.midPoint;
             rotatedShape[i] = new Array(x, y);
@@ -48,16 +48,26 @@ const current = {
     },
     draw: function() {
         ctx.fillStyle = 'rgb(0,150,0)';
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < this.shape.length; i++) {
             ctx.fillRect((this.locationX + this.shape[i][0]) * blockSize, (this.locationY + this.shape[i][1]) * blockSize, blockSize - 1, blockSize -1);
         }
     },
     clear: function() {
         ctx.fillStyle = 'rgb(0,150,0)';
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < this.shape.length; i++) {
             ctx.clearRect((this.locationX + this.shape[i][0]) * blockSize, (this.locationY + this.shape[i][1]) * blockSize, blockSize - 1, blockSize -1);
         }
     },
+    isConflict: function() {
+        for (let i = 0; i < this.shape.length; i++) {
+            console.log(this.locationX + this.shape[i][0], this.locationY + this.shape[i][1])
+            if (map.some(mapLocation => mapLocation[0] === this.locationX + this.shape[i][0] && mapLocation[1] === this.locationY + this.shape[i][1])) {
+                console.log('conflict!');
+                return true;
+            }
+        }  
+    }
+
 }
 
 // keyboard event
@@ -65,45 +75,78 @@ window.onkeydown = function(e) {
     if (e.keyCode == 40) {
         current.clear();
         current.locationY++;
+        if (current.isConflict()) {
+            current.locationY--;
+            current.draw();
+            return;
+        }
         current.draw();
     }
     if (e.keyCode == 37) {
         current.clear();
         current.locationX--;
+        if (current.isConflict()) {
+            current.locationX++;
+            current.draw();
+            return;
+        }
         current.draw();
     } 
     if (e.keyCode == 39) {
         current.clear();
         current.locationX++;
+        if (current.isConflict()) {
+            current.locationX--;
+            current.draw();
+            return;
+        }
         current.draw();
     } 
     if (e.keyCode == 65) {
         current.clear();
         current.rotate(isClocwise=false);
+        if (current.isConflict()) {
+            current.rotate(isClockwise=true);
+            current.draw();
+            return;
+        }
         current.draw();
     }
     if (e.keyCode == 83) {
         current.clear();
         current.rotate(isClockwise=true);
+        if (current.isConflict()) {
+            current.rotate(isClocwise=false);
+            current.draw();
+            return;
+        }
         current.draw();
     }  
 }
 
 
+const delay = 1000;
 let start = null;
 handler = function(timeStamp) {
     if (!start) {
         start = timeStamp;
     }
-    current.draw();
-    if (timeStamp -  start> 1000) {
+    if (timeStamp -  start > delay) {
         current.clear();
         ++current.locationY;
+        if (current.isConflict()){
+            --current.locationY;
+            current.draw();
+            return;
+        };
+        current.draw();
         start = timeStamp
     }
+
+
     requestAnimationFrame(handler);
 }
-
+current.draw();
 requestAnimationFrame(handler);
 
 
