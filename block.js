@@ -47,10 +47,16 @@ const gameBoard = {
         for (let y = 0; y < board.size; y++) {
             let layer = board.get(y);
             for (let x of layer) {
-                mapCtx.fillRect(x * blockSize, y * blockSize, blockSize - 1, blockSize - 1)
+                mapCtx.fillRect(x * blockSize, y * blockSize, blockSize - 1, blockSize - 1);
             }
         }
     },
+    removeLine: function(lineNumber) {
+        this.stack.delete(lineNumber);
+    },
+    ereaseStackImage: function () {
+        mapCtx.clearRect(0, 0 , canvas.width, canvas.height);
+    }
 }
 gameBoard.draw()
 let a = gameBoard.getStopBlocks();
@@ -79,7 +85,7 @@ const blockOShape = [
     [0, 2],
     [1, 2]
 ];
-const blockSSahpe = [
+const blockSShape = [
     [1, 1],
     [2, 1],
     [0, 2],
@@ -129,9 +135,8 @@ const current = {
     isConflict: function () {
         let stopBlocks = gameBoard.getStopBlocks();
         for (let point of this.shape) {
-            if (stopBlocks.get(this.locationY + point[1]).includes(this.locationX + point[0])) {
-                return true;
-            }
+            if (!stopBlocks.has(this.locationY + point[1])) continue;
+            if (stopBlocks.get(this.locationY + point[1]).includes(this.locationX + point[0])) return true;
         }
         return false;
     },
@@ -139,9 +144,7 @@ const current = {
         let locationX = this.locationX
         let locationY = this.locationY
         this.shape.forEach(function (point) {
-            console.log(locationY);
             if (gameBoard.stack.has(locationY + point[1])) {
-                console.log(gameBoard.stack.get(locationY + point[1]));
                 gameBoard.stack.get(locationY + point[1]).push(locationX + point[0]);
                 return;
             }
@@ -151,17 +154,38 @@ const current = {
 }
 
 const gameHandler = {
-    blockShapes: [blockTShape, blockJShape, blockZShape, blockOShape, blockSSahpe, blockLShape, blockIShape],
-    getRandomBlock: function() {
+    blockShapes: [blockTShape, blockJShape, blockZShape, blockOShape, blockSShape, blockLShape, blockIShape],
+    getRandomBlock: function () {
         let randomIndex = Math.floor(Math.random() * this.blockShapes.length);
-        console.log(this.blockShapes[randomIndex]);
         return this.blockShapes[randomIndex];
     },
-    assignNewCurrentBlock: function() {
+    assignNewCurrentBlock: function () {
         current.shape = this.getRandomBlock();
         current.midPoint = (current.shape === blockIShape) ? 1.5 : 1;
-        current.locationX = 4
-        current.locationY = -1
+        current.locationX = 4;
+        current.locationY = -1;
+    },
+    isLineFull: function () {
+        for (let i = 0; i < 4; i++) {
+            if (!gameBoard.stack.has(current.locationY + i)) continue;
+            if (gameBoard.stack.get(current.locationY + i).length === 10) return true;
+        }
+        return false;
+    },
+    clearLine: function () {
+        let clearCount = 0;
+        for (let i = 3; i > - gameBoard.stack.size - 1; i--) {
+            let blockPointY = current.locationY + i
+            if (!gameBoard.stack.has(blockPointY)) continue;
+            if (gameBoard.stack.get(blockPointY).length === 10) {
+                gameBoard.removeLine(blockPointY);  
+                clearCount++;
+            } else {
+                let line = gameBoard.stack.get(blockPointY);
+                gameBoard.removeLine(blockPointY);  
+                gameBoard.stack.set(blockPointY + clearCount, line);
+            }
+        }
     }
 }
 // keyboard event
@@ -175,6 +199,14 @@ window.onkeydown = function (e) {
             return;
         }
         current.draw();
+    }
+    if (e.keyCode == 32) {
+        current.clear();
+        while(!current.isConflict()) {
+            current.locationY++;
+        }
+        current.locationY--;
+        current.draw(); 
     }
     if (e.keyCode == 37) {
         current.clear();
@@ -198,7 +230,7 @@ window.onkeydown = function (e) {
     }
     if (e.keyCode == 65) {
         current.clear();
-        current.rotate(isClocwise = false);
+        current.rotate(isClockwise = false);
         if (current.isConflict()) {
             current.rotate(isClockwise = true);
             current.draw();
@@ -231,6 +263,8 @@ handler = function (timeStamp) {
             --current.locationY;
             current.clear();
             current.stackCurrentBlock();
+            gameHandler.clearLine();
+            gameBoard.ereaseStackImage();
             gameBoard.draw();
             gameHandler.assignNewCurrentBlock();
         };
