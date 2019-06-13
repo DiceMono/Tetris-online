@@ -104,6 +104,7 @@ const current = {
     locationX: 4,
     locationY: -1,
     rotate: function (isClockwise) {
+        if (this.shape === blockOShape) return;
         let sign = isClockwise ? 1 : -1;
         let rotatedShape = new Array(this.shape.length);
         for (let i = 0; i < this.shape.length; i++) {
@@ -129,7 +130,6 @@ const current = {
         let stopBlocks = gameBoard.getStopBlocks();
         for (let point of this.shape) {
             if (stopBlocks.get(this.locationY + point[1]).includes(this.locationX + point[0])) {
-                console.log('conflict!');
                 return true;
             }
         }
@@ -140,7 +140,7 @@ const current = {
         let locationY = this.locationY
         this.shape.forEach(function (point) {
             console.log(locationY);
-            if(gameBoard.stack.has(locationY + point[1])) {
+            if (gameBoard.stack.has(locationY + point[1])) {
                 console.log(gameBoard.stack.get(locationY + point[1]));
                 gameBoard.stack.get(locationY + point[1]).push(locationX + point[0]);
                 return;
@@ -150,6 +150,20 @@ const current = {
     }
 }
 
+const gameHandler = {
+    blockShapes: [blockTShape, blockJShape, blockZShape, blockOShape, blockSSahpe, blockLShape, blockIShape],
+    getRandomBlock: function() {
+        let randomIndex = Math.floor(Math.random() * this.blockShapes.length);
+        console.log(this.blockShapes[randomIndex]);
+        return this.blockShapes[randomIndex];
+    },
+    assignNewCurrentBlock: function() {
+        current.shape = this.getRandomBlock();
+        current.midPoint = (current.shape === blockIShape) ? 1.5 : 1;
+        current.locationX = 4
+        current.locationY = -1
+    }
+}
 // keyboard event
 window.onkeydown = function (e) {
     if (e.keyCode == 40) {
@@ -218,7 +232,7 @@ handler = function (timeStamp) {
             current.clear();
             current.stackCurrentBlock();
             gameBoard.draw();
-            return;
+            gameHandler.assignNewCurrentBlock();
         };
         current.draw();
         start = timeStamp
