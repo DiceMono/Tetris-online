@@ -132,7 +132,24 @@ const currentBlock = {
         const movement = isRight ? 1 : -1;
         location[0] += movement;
     },
-    moveDown: function () {
-        location[1]++;
+    moveDown: function (isDown = true) {
+        const movement = isDown ? 1 : -1;
+        location[1] += movement;
+    }
+}
+
+const isConflict = function () {
+    let stopBlocks = gameBoard.getStopBlocks();
+    for (let point of currentBlock.block.shape) {
+        if (!stopBlocks.has(currentBlock.location[1] + point[1])) continue;
+        if (stopBlocks.get(currentBlock.location[1] + point[1]).includes(this.locationX + point[0])) return true;
+    }
+    return false;
+}
+
+const conflictHandler = function (func, direction) {
+    func(direction);
+    if (isConflict) {
+        func(!direction);
     }
 }
