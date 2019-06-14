@@ -8,21 +8,7 @@ const mapHeight = 20;
 
 const mapCtx = document.getElementById('mapCanvas').getContext('2d');
 
-let map = new Array();
-for (let i = 0; i < mapHeight; i++) {
-    map.push([0, i]);
-    map.push([mapWidth + 1, i]);
-}
-
-for (let i = 0; i < mapWidth + 2; i++) {
-    map.push([i, mapHeight])
-}
-
-// for (let i = 0; i < map.length; i++) {
-//     mapCtx.fillRect(map[i][0]* blockSize, map[i][1]* blockSize, blockSize-1, blockSize-1)
-// }
-
-let mb = new Array();
+let mb = [];
 for (let i = 0; i < mapHeight; i++) {
     mb.push([i, [0, mapWidth + 1]]);
 }
@@ -188,7 +174,10 @@ const gameHandler = {
         }
     }
 }
+
 // keyboard event
+
+// window.addEventListener('keydown', function (e) {});
 window.onkeydown = function (e) {
     if (e.keyCode == 40) {
         current.clear();
@@ -231,6 +220,8 @@ window.onkeydown = function (e) {
     if (e.keyCode == 65) {
         current.clear();
         current.rotate(isClockwise = false);
+
+
         if (current.isConflict()) {
             current.rotate(isClockwise = true);
             current.draw();
@@ -249,29 +240,3 @@ window.onkeydown = function (e) {
         current.draw();
     }
 }
-
-const delay = 1000;
-let start = null;
-handler = function (timeStamp) {
-    if (!start) {
-        start = timeStamp;
-    }
-    if (timeStamp - start > delay) {
-        current.clear();
-        ++current.locationY;
-        if (current.isConflict()) {
-            --current.locationY;
-            current.clear();
-            current.stackCurrentBlock();
-            gameHandler.clearLine();
-            gameBoard.ereaseStackImage();
-            gameBoard.draw();
-            gameHandler.assignNewCurrentBlock();
-        };
-        current.draw();
-        start = timeStamp
-    }
-    requestAnimationFrame(handler);
-}
-current.draw();
-requestAnimationFrame(handler);
