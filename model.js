@@ -135,7 +135,7 @@ const currentBlock = {
     moveDown: function (isDown = true) {
         const movement = isDown ? 1 : -1;
         location[1] += movement;
-    }
+    },
 }
 
 const isConflict = function () {
@@ -151,5 +151,46 @@ const conflictHandler = function (func, direction) {
     func(direction);
     if (isConflict) {
         func(!direction);
+    }
+}
+
+const nextBlock = {
+    blocks: [BLOCK_T, BLOCK_J, BLOCK_Z, BLOCK_O, BLOCK_S, BLOCK_L, BLOCK_I],
+    startLocation: [4, -1],
+    queueSize: 1,
+    queue: (function() {
+        setQueue();
+    }()),
+    generateRandomBlock: function () {
+        let randomIndex = Math.floor(Math.random() * this.blockShapes.length);
+        return this.blocks[randomIndex];
+    },
+    setQueue: function() {
+        let queue = [];
+        for(let i = 0; i < this.queueSize; i++) {
+            queue.push(this.generateRandomBlock());
+        }
+        return queue;
+    },
+    setCurrentBlock: function() {
+        currentBlock.block = this.queue.shift();
+        currentBlock.location = this.startLocation;
+        this.queue.push(this.generateRandomBlock());
+    },
+}
+
+const score = {
+    score: 0,
+    reset: function() {
+        this.score = 0;
+        return this.score;
+    },
+    add: function(point) {
+        this.score += point;
+        return this.score;
+    },
+    toString: function() {
+        const MAX_SCORE = '000000';
+        return MAX_SCORE.slice(0 , MAX_SCORE.length - score.toString.length - 1) + score;
     }
 }
