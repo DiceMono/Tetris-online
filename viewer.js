@@ -2,7 +2,7 @@ const mainCanvas = document.getElementById('main');
 const mainCtx = mainCanvas.getContext('2d');
 
 const gameBoardCanvas = document.getElementById('gameBoard');
-const gmaeBoardCtx = gameBoardCanvas.getContext('2d');
+const gameBoardCtx = gameBoardCanvas.getContext('2d');
 
 const scoreCanvas = document.getElementById('score');
 const scoreCtx = scoreCanvas.getContext('2d');
@@ -55,11 +55,10 @@ const drawScore = function () {
     scoreCtx.fillText(score, BASE_LOCATION[0], BASE_LOCATION[0])
 }
 
-
 const showNextBlocks = function () {
     let interval = 0;
-    const nextBlocks = nextBlocks.getQueue();
-    nextBlocks.forEach(function (nextBLock) {
+    const queue = nextBlocks.getQueue();
+    queue.forEach(function (nextBlock) {
         nextBlock.baseShape.forEach(function (point) {
             let x = BASE_LOCATION[0] + point[0];
             let y = BASE_LOCATION[1] + point[1] + interval;

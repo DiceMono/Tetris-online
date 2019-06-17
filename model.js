@@ -56,19 +56,23 @@ const COLORS = (function () {
 
 class Block {
     constructor(shape, middle, color) {
+        this.baseShape = shape;
         this.shape = shape;
         this.middle = middle;
         this.color = color;
     }
+    resetShape() {
+        this.shape = this.baseShape;
+    }
 }
 
-const BLOCK_T = Block(SHAPE_T, 1, COLORS[0]);
-const BLOCK_J = Block(SHAPE_J, 1, COLORS[1]);
-const BLOCK_Z = Block(SHAPE_Z, 1, COLORS[2]);
-const BLOCK_O = Block(SHAPE_O, 1.5, COLORS[3]);
-const BLOCK_S = Block(SHAPE_S, 1, COLORS[4]);
-const BLOCK_L = Block(SHAPE_L, 1, COLORS[5]);
-const BLOCK_I = Block(SHAPE_I, 1.5, COLORS[6]);
+const BLOCK_T = new Block(SHAPE_T, 1, COLORS[0]);
+const BLOCK_J = new Block(SHAPE_J, 1, COLORS[1]);
+const BLOCK_Z = new Block(SHAPE_Z, 1, COLORS[2]);
+const BLOCK_O = new Block(SHAPE_O, 1.5, COLORS[3]);
+const BLOCK_S = new Block(SHAPE_S, 1, COLORS[4]);
+const BLOCK_L = new Block(SHAPE_L, 1, COLORS[5]);
+const BLOCK_I = new Block(SHAPE_I, 1.5, COLORS[6]);
 
 const GAMEBOARD_WIDTH = 10;
 const GAMEBOARD_HEIGHT = GAMEBOARD_WIDTH * 2;
@@ -79,7 +83,7 @@ const WALL_BASE = new Map(
         let wall = [];
 
         for (let layer = 0; layer < GAMEBOARD_HEIGHT; layer++) {
-            wall.push([layer, [0, mapWidth + 1]]);
+            wall.push([layer, [0, GAMEBOARD_WIDTH + 1]]);
         }
 
         wall.push([GAMEBOARD_HEIGHT, BOTTOM]);
@@ -114,9 +118,46 @@ const gameBoard = {
     },
 }
 
+const START_LOCATION = [4, -1];
+const nextBlocks = {
+    blocks: [BLOCK_T, BLOCK_J, BLOCK_Z, BLOCK_O, BLOCK_S, BLOCK_L, BLOCK_I],
+    queueSize: 2,
+    queue: null,
+    getQueue: function () {
+        return this.queue;
+    },
+    generateRandomBlock: function () {
+        let randomIndex = Math.floor(Math.random() * this.blocks.length);
+        return this.blocks[randomIndex];
+    },
+    setQueue: function() {
+        let queue = [];
+        for(let i = 0; i < this.queueSize; i++) {
+            queue.push(this.generateRandomBlock());
+        }
+        this.queue = queue
+    },
+    setCurrentBlock: function() {
+        currentBlock.block = this.queue.shift();
+        currentBlock.location = START_LOCATION;
+        this.queue.push(this.generateRandomBlock());
+    },
+}
+nextBlocks.setQueue();
+
 const currentBlock = {
     block: null,
     location: null,
+    toMap: function() {
+        let location = this.location;
+        let map = new Map();
+        this.block.shape.forEach(function (point) {
+            let x = location[0] + point[0];
+            let y = location[1] + point[1];
+            map.set(y, (map.get(y) || []).concat([x]))
+        })
+        return map;
+    },
     rotate: function (isClockwise) {
         const SHAFT = this.block.middle;
         const sign = isClockwise ? 1 : -1;
@@ -137,6 +178,7 @@ const currentBlock = {
         location[1] += movement;
     },
 }
+nextBlocks.setCurrentBlock();
 
 const isConflict = function () {
     let stopBlocks = gameBoard.getStopBlocks();
@@ -154,31 +196,7 @@ const conflictHandler = function (func, direction) {
     }
 }
 
-const nextBlock = {
-    blocks: [BLOCK_T, BLOCK_J, BLOCK_Z, BLOCK_O, BLOCK_S, BLOCK_L, BLOCK_I],
-    startLocation: [4, -1],
-    queueSize: 1,
-    queue: (function() {
-        setQueue();
-    }()),
-    generateRandomBlock: function () {
-        let randomIndex = Math.floor(Math.random() * this.blockShapes.length);
-        return this.blocks[randomIndex];
-    },
-    setQueue: function() {
-        let queue = [];
-        for(let i = 0; i < this.queueSize; i++) {
-            queue.push(this.generateRandomBlock());
-        }
-        return queue;
-    },
-    setCurrentBlock: function() {
-        currentBlock.block = this.queue.shift();
-        currentBlock.location = this.startLocation;
-        this.queue.push(this.generateRandomBlock());
-    },
-}
-
+const MAX_SCORE = '000000';
 const score = {
     score: 0,
     reset: function() {
@@ -190,7 +208,6 @@ const score = {
         return this.score;
     },
     toString: function() {
-        const MAX_SCORE = '000000';
         return MAX_SCORE.slice(0 , MAX_SCORE.length - score.toString.length - 1) + score;
     }
 }
