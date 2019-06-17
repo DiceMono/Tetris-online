@@ -94,28 +94,44 @@ const WALL_BASE = new Map(
 const gameBoard = {
     stack: new Map(),
     wall: WALL_BASE,
-    getLine: function (map, layer) {
-        return map.get(layer);
+    getFullLayers: function () {
+        let layers = [];
+        this.stack.forEach(function (line, layer) {
+            if (line.length === GAMEBOARD_WIDTH) layers.push(layer); 
+        })
+        return layers;
     },
     removeStackLayer: function (layer) {
         this.stack.delete(layer);
     },
     moveStackLayer: function (layer, destination) {
-        this.stack.set(destination, this.getLine(this.stack, layer));
+        this.stack.set(destination, this.stack.get(layer));
         this.stack.delete(layer);
     },
     getStopBlocks: function () {
         let stopBlocks = new Map();
         for (let layer = 0; layer < this.wall.size; layer++) {
-            let line = this.getLine(this.wall, layer);
+            let line = this.wall.get(layer);
             if (this.stack.has(layer)) {
-                let stackLine = this.getLine(this.stack, layer);
+                let stackLine = this.stack.get(layer);
                 line = line.concat(stackLine);
             }
             stopBlocks.set(layer, line);
         }
         return stopBlocks;
     },
+    clearFullLayers: function (fullLayers) {
+        let newStack = new Map();
+
+        this.stack.forEach(function(line, layer) {
+            let count = 0;
+            fullLayers.forEach(function (fullLayer) {
+                if (fullLayer < layer) count++;
+            });
+            newStack.set(layer - count, line);
+        });
+        this.stack = newStack;
+    }
 }
 
 const START_LOCATION = [4, -1];
@@ -177,6 +193,17 @@ const currentBlock = {
         const movement = isDown ? 1 : -1;
         location[1] += movement;
     },
+    stack: function () {
+        let map = this.toMap();
+        map.forEach(function (line, layer) {
+            if (gameBoard.stack.has(layer)) {
+                let newLine = gameBoard.stack.get(layer).concat(line);
+                gameBoard.stack.set(layer, newLine);
+                return;
+            } 
+            gameBoard.stack.set(layer, line)
+        });        
+    }
 }
 nextBlocks.setCurrentBlock();
 
@@ -193,6 +220,7 @@ const conflictHandler = function (func, direction) {
     func(direction);
     if (isConflict) {
         func(!direction);
+        return true;
     }
 }
 
