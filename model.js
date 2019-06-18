@@ -6,71 +6,153 @@ const START_LOCATION_Y = -1;
 
 class Block {
     constructor(point, middle, color) {
-        this.setOriginPoint(point)
-        this.init(point, middle, color)
-    }
-    setOriginPoint(point) {
-        this.originPoint = point;
+        this._init(point, middle, color)
     }
 
-    init(point, middle, color) {
-        this.point = point;
-        this.middle = middle;
-        this.color = color;
+    _init(point, middle, color) {
+        this._initVars(point, middle, color)
+        this._copyPointDeep(point)
+    }
+
+    _initVars(point, middle, color) {
+        this._originPoint = point;
+        this._middle = middle;
+        this._color = color;
+    }
+
+    _copyPointDeep(point) {
+        this._point = point.copy();
+    }
+
+    getPoint() {
+        return this._point;
+    }
+
+    getOriginPoint() {
+        return this._originPoint;
+    }
+
+    getColor() {
+        return this._color;
     }
 
     resetPoint() {
-        this.point = this.originPoint;
+        this._point = this._originPoint;
     }
 
     move(x, y) {
-        this.
+        this._point.move(x, y);
+    }
+
+    rotate(isClockwise) {
+        this._point.rotate(isClockwise, this._middle)
+    }
+
+    addblock(block) {
+        this._point
     }
 }
 
 class Point {
-    constructor(map=new Map()) {
-        this.init(map)
+    constructor(map = new Map()) {
+        this._init(map)
     }
 
-    init(map) {
-        this.map = map;
+    _init(map) {
+        this._map = map;
+    }
+    getMap() {
+        return this._map;
     }
 
     getLine(layer) {
-        return this.map.get(layer);
+        return this._map.get(layer);
     }
 
-    hasLayer(Layer) {
-        return this.map.has(layer);
+    hasLayer(layer) {
+        return this._map.has(layer);
     }
 
     setLayer(layer, line) {
-        this.map.set(layer, line);
+        this._map.set(layer, line);
     }
 
     deleteLayer(layer) {
-        this.map.delete(layer);
+        this._map.delete(layer);
     }
 
     getFullLayers() {
         let layers = [];
-        this.map.forEach((line, layer) => {
+        this._map.forEach((line, layer) => {
             if (line.length === GAMEBOARD_WIDTH) layers.push(layer);
         })
         if (layers.length === 0) return false;
         return layers;
     }
 
+    copy() {
+        let newMap = new Map();
+        this._map.forEach((line, y) => {
+            line.forEach((x) => {
+                if (newMap.has(y)) {
+                    newMap.set(y, newMap.get(y).concat([x]));
+                    return;
+                }
+                newMap.set(y, x)
+            });
+        });
+        return new Point(newMap);
+    }
+
     move(x, y) {
         let movedMap = new Map()
-        this.map.forEach((line, layer) => {
-            line.forEach((value) => {
-                value += x;
+        this._map.forEach((line, layer) => {
+            line.forEach((value, index) => {
+                line[index] += x;
             });
             movedMap.set(layer + y, line);
         });
-        this.map = movedMap;
+        this._map = movedMap;
+    }
+
+    rotate(isClockwise, shaft) {
+        let sign = 1;
+        if (!isClockwise) sign = -1;
+        let rotatedMap = new Map();
+        this._map.forEach((line, y) => {
+            let rotatedX = -sign * (y - shaft) + shaft;
+            line.forEach((x) => {
+                let rotatedY = sign * (x - shaft) + shaft;
+                if (rotatedMap.has(rotatedY)) {
+                    let rotatedLine = rotatedMap.get(rotatedY).concat([rotatedX])
+                    rotatedMap.set(rotatedY, rotatedLine);
+                    return;
+                }
+                rotatedMap.set(rotatedY, rotatedX)
+            });
+        });
+    }
+
+    addPoint(point) {
+        let result = new Point();
+        this._map.forEach((line, y) => {
+            if (this.hasLayer(y)) {
+                let newLine = line.concat(point.getMap().getLine(y))
+                result.setLayer(y, newLine);
+                return;
+            }
+            result.setLayer(y, line);
+        });
+        return result;
+    }
+
+    static isConflict(point1, point2) {
+        for (let y in point1.getMap().keys()) {
+            if (point2.getLine(y).some((x) => {
+                    point1.getLine(y).includes(x);
+                })) return true;
+        }
+        return false;
     }
 }
 const BASE_MAP_T = new Map([
@@ -132,32 +214,19 @@ const BLOCK_S = new Block(POINT_S, 1, COLORS[4]);
 const BLOCK_L = new Block(POINT_L, 1, COLORS[5]);
 const BLOCK_I = new Block(POINT_I, 1.5, COLORS[6]);
 
+const BOTTOM_LINE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
-const BOTTOM = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-const WALL_BASE = new Point(new Map(
-    (function () {
-        let wall = [];
-
-        for (let layer = 0; layer < GAMEBOARD_HEIGHT; layer++) {
-            wall.push([layer, [0, GAMEBOARD_WIDTH + 1]]);
-        }
-
-        wall.push([GAMEBOARD_HEIGHT, BOTTOM]);
-        return wall;
-    }())
-));
-
-class GameBoard {
+class Stack {
     constructor() {
-        this.init()
+        this._init()
     }
 
-    init() {
-        this.initWall()
-        this.initStack()
+    _init() {
+        this._initWall()
+        this._initStack()
     }
 
-    initWall() {
+    _initWall() {
         let wallMap = new Map(
             (function () {
                 let wall = [];
@@ -166,28 +235,19 @@ class GameBoard {
                     wall.push([layer, [0, GAMEBOARD_WIDTH + 1]]);
                 }
 
-                wall.push([GAMEBOARD_HEIGHT, BOTTOM]);
+                wall.push([GAMEBOARD_HEIGHT, BOTTOM_LINE]);
                 return wall;
             }())
         )
-        this.wall = new Point(wallMap);
+        this._wall = new Point(wallMap);
     }
 
-    initStack() {
-        this.stack = new Point();
+    _initStack() {
+        this._stack = new Point();
     }
 
     getStopBlocks() {
-        let stopBlocks = new Point();
-        for (let layer = 0; layer < this.wall.size; layer++) {
-            let line = this.wall.getLine(layer);
-            if (this.stack.hasLayer(layer)) {
-                let stackLine = this.stack.getLine(layer);
-                line = line.concat(stackLine);
-            }
-            stopBlocks.setLayer(layer, line);
-        }
-        return stopBlocks;
+        return this._stack.addPoint(this._wall);
     }
 
     getFullLayersInStack() {
@@ -197,36 +257,40 @@ class GameBoard {
     clearFullLayers(fullLayers) {
         let newStack = new Point();
         fullLayers.forEach((fullLayer) => {
-            this.stack.deleteLayer(fullLayer);
+            this._stack.deleteLayer(fullLayer);
         })
-        this.stack.forEach((line, layer) => {
+        this._stack.forEach((line, layer) => {
             let count = 0;
             fullLayers.forEach((fullLayer) => {
                 if (fullLayer > layer) count++;
             });
             newStack.setLayer(layer + count, line);
         });
-        this.stack = newStack;
+        this._stack = newStack;
+    }
+
+    stack(block) {
+        this._stack.addPoint(block.getPoint());
     }
 }
 const gameBoard = new GameBoard();
 
 class NextBlock {
     constructor() {
-        this.init()
+        this._init();
     }
 
-    init() {
+    _init() {
         this.blocks = [BLOCK_T, BLOCK_J, BLOCK_Z, BLOCK_O, BLOCK_S, BLOCK_L, BLOCK_I];
-        this.initQueue();
+        this._initQueue();
     }
 
-    initQueue() {
+    _initQueue() {
         this.queueLength = 2;
-        this.setQueue();
+        this._setQueue();
     }
 
-    setQueue() {
+    _setQueue() {
         let queue = [];
         for (let i = 0; i < this.queueLength; i++) {
             queue.push(this.getRandomBlock());
@@ -234,20 +298,56 @@ class NextBlock {
         this.queue = queue
     }
 
-    getRandomBlock() {
+    _getRandomBlock() {
         let randomIndex = Math.floor(Math.random() * this.blocks.length);
         return this.blocks[randomIndex];
     }
 
-    setCurrentBlock() {
-        currentBlock.block = this.queue.shift();
-        currentBlock.block.resetShape();
-        currentBlock.location = [START_LOCATION_X, START_LOCATION_Y];
-        this.queue.push(this.generateRandomBlock());
+    generate() {
+        let nextBlock = this.queue.shift();
+        this.queue.push(this._generateRandomBlock());
+        nextBlock.resetPoint();
+        return nextBlock;
     }
 }
 const nextBlock = new NextBlock();
+class CurrentBlock {
+    constructor(block) {
+        this.init(block)
+    }
 
+    init(block) {
+        this._setBlock(block);
+        this._resetLocation();
+    }
+
+    _setBlock(block) {
+        this._block = block;
+    }
+
+    _resetLocation() {
+        this._location = [START_LOCATION_X, START_LOCATION_Y];
+    }
+
+    getBlock() {
+        return this._block;
+    }
+
+    rotate(isClockwise) {
+        this._block.rotate(isClockwise);
+    }
+
+    moveSide(isRight) {
+        let movement = isRight ? 1 : -1;
+        this._block.move(movement, 0);
+    }
+
+    moveDown(isDown = true) {
+        let movement = isDown ? 1 : -1;
+        this._block.move(0, movement);
+    }
+}
+const currentBlock = new CurrentBlock(nextBlock.generate());
 const currentBlock = {
     block: null,
     location: null,
@@ -306,7 +406,7 @@ const isConflict = function () {
     return false;
 }
 
-const conflictHandler = function (func, direction) {
+const handleConflict = function (func, direction) {
     func(direction);
     if (isConflict()) {
         func(!direction);
