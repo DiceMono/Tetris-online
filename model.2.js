@@ -1,3 +1,11 @@
+const mainCanvas = document.getElementById('main');
+const mainCtx = mainCanvas.getContext('2d');
+mainCanvas.ctx = mainCtx;
+
+const stackCanvas = document.getElementById('stack');
+const stackCtx = stackCanvas.getContext('2d');
+stackCanvas.ctx = stackCtx;
+
 const BLOCK_MAX_WIDTH = 10;
 const BLOCK_MAX_HEIGHT = BLOCK_MAX_WIDTH * 2;
 
@@ -6,7 +14,7 @@ const START_LOCATION_Y = -1;
 
 const MAX_SCORE = '000000';
 const BLOCK_MAX_NUMBER = 7;
-const NUMBER_TO_SHOW_NEXT_BLOCKS = 3;
+const NEXT_BLOCKS_NUMBER = 3;
 const SHAPE_T = [
     [0, [4, 5, 6]],
     [1, [5]]
@@ -39,7 +47,7 @@ const SHAPE_I = [
 const COLORS = (function () {
     const MIN_RGB = 0;
     const MAX_RGB = 200;
-    let randomRGB = function () {
+    let randomRGB = () => {
         return MIN_RGB + Math.round(Math.random() * (MAX_RGB - MIN_RGB))
     };
     let colors = [];
@@ -48,6 +56,15 @@ const COLORS = (function () {
     }
     return colors;
 }())
+
+const sendEvent = (eventName, target, object) => {
+    let event = new CustomEvent(eventName, {
+        detail: {
+            point: object
+        }
+    });
+    target.dispatchEvent(event);
+}
 
 const BOTTOM_WALL = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const WALL_ARRAY = [];
@@ -149,9 +166,10 @@ class Stack extends Point {
         });
         this.setMap(new Map(result));
     }
+    stackBlock(block) {
+        this.concat(block);
+    }
 }
-let stack = new Stack();
-
 class Block extends Point {
     constructor(array, shaft, color) {
         super(array);
@@ -164,6 +182,9 @@ class Block extends Point {
     _initShaft(shaft) {
         this._defaultShaft = shaft
         this._shaft = [shaft, shaft]
+    }
+    getColor() {
+        return this._color;
     }
     resetBlock() {
         this.reset();
@@ -219,14 +240,15 @@ const BLOCK_I = new Block(SHAPE_I, [5.5, 0.5], COLORS[6]);
 
 class BlockGenerator {
     constructor() {
-        this._initBlocks();        
+        this._initBlocks();
+        this._initQueue();
     }
     _initBlocks() {
         this._blocks = [BLOCK_I, BLOCK_J, BLOCK_L, BLOCK_O, BLOCK_S, BLOCK_T, BLOCK_Z];
     }
     _initQueue() {
         let queue = [];
-        for (let i = 0; i <NUMBER_TO_SHOW_NEXT_BLOCKS; i++) {
+        for (let i = 0; i < NEXT_BLOCKS_NUMBER; i++) {
             let randomBlock = this._getRandomBlock();
             queue.push(randomBlock);
         }
@@ -243,8 +265,7 @@ class BlockGenerator {
         return this._queue.shift();
     }
 }
-const blockGenerator = new BlockGenerator();
-// level과 점수를 따로 관리해야할까?
+// level과 score을 분리할까?
 class Level {
     constructor() {
         this._init();
@@ -257,75 +278,133 @@ class Level {
         this._score += score;
     }
 }
-const level = new Level();
 
 class Current {
     constructor() {
         this._initStack();
         this._initLevel();
         this._initBlockGenerator();
-        this._setBlock();
+        this._resetBlock();
     }
     _initStack() {
-        this._stack = stack;
+        this._stack = new Stack();
     }
     _initLevel() {
-        this._level = level;
+        this._level = new Level();
     }
     _initBlockGenerator() {
-        this._blockGenerator = blockGenerator;
+        this._blockGenerator = new BlockGenerator();
     }
-    _setBlock() {
+    _resetBlock() {
         let block = this._blockGenerator.generate();
         this._block = block;
+    }
+    _sendBlockEraseEvent() {
+        sendEvent('erase', mainCanvas, this._block);
+    }
+    _sendBlockDrawEvent() {
+        sendEvent('draw', mainCanvas, this._block);
+    }
+    _sendBlockEraseDrawEventClosure(func, ...args) {
+        this._sendBlockEraseEvent();
+        func(...args);
+        this._sendBlockDrawEvent();
+    }
+    _sendStackEraseEvent() {
+        sendEvent('erase', stackCanvas, this._stack);
+    }
+    _sendStackDrawEvent() {
+        sendEvent('draw', stackCanvas, this._stack);
+    }
+    _sendStackEraseDrawEvent(func, ...args) {
+        this._sendStackEraseEvent();
+        func(...args);
+        this._sendStackDrawEvent();
+    }
+    _stackBlock() {
+        this._stack.concat(this._block);
     }
     _isConflict() {
         let stopBlocks = this._stack.getStopBlocks()
         if (this._block.isConflictWith(stopBlocks)) return true;
         return false;
     }
-    _stackBlock() {
-        this._stack.concat(this._block);
+    takeFirstFrame() {
+        this._sendBlockDrawEvent();
+        this._sendStackDrawEvent();
     }
     takeOneFrame() {
-        this._block.moveDown();
+        this._moveDownAndSendEraseDrawEvent();
         if (!this._isConflict()) return;
         this._stackBlock();
         this._stack.clearFullLayers();
-        this._setBlock();
+        this._resetBlock();
+    }
+    _moveDownAndSendEraseDrawEvent() {
+        this._sendBlockEraseEvent();
+        this._block.moveDown();
+        this._sendBlockDrawEvent();
+    }
+    playGame() {
+        let start = 0;
+        let delay = 1000;
+        this.takeFirstFrame();
+        const animate = (timestamp) => {
+            if (timestamp - start > delay) {
+                this.takeOneFrame();
+                start = timestamp
+            }
+            requestAnimationFrame(animate)
+        }
+
+
+        requestAnimationFrame(animate)
     }
 }
-
-
+const current = new Current();
+current.playGame();
 
 //viewer
 
-const mainCanvas = document.getElementById('main');
-const mainCtx = mainCanvas.getContext('2d');
-
-const gameBoardCanvas = document.getElementById('gameBoard');
-const gameBoardCtx = gameBoardCanvas.getContext('2d');
 
 const BLOCK_SIZE = 20;
-
 const BASE_LOCATION_X = 0;
 const BASE_LOCATION_Y = 0;
 
-const draw = function (map, ctx, color) {
+const drawPoint = function (point, ctx, color) {
     ctx.fillStyle = color;
-    map.forEach(function (line, layer) {
-        line.forEach(function (locationX) {
-            ctx.fillRect(locationX * BLOCK_SIZE, layer * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+    point.forEach(function (line, y) {
+        line.forEach(function (x) {
+            ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
         })
     })
 }
-
-const erase = function (map, ctx) {
-    map.forEach(function (line, layer) {
-        line.forEach(function (locationX) {
-            ctx.clearRect(locationX * BLOCK_SIZE, layer * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+const erasePoint = function (point, ctx) {
+    point.forEach(function (line, y) {
+        line.forEach(function (x) {
+            ctx.clearRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
         })
     })
 }
+mainCanvas.addEventListener('draw', (e) => {
+    let point = e.detail.point;
+    let color = point.getColor();
+    let ctx = mainCanvas.ctx;
+    drawPoint(point, ctx, color);
+});
+mainCanvas.addEventListener('erase', (e) => {
+    let point = e.detail.point
+    let ctx = mainCanvas.ctx;
+    erasePoint(point, ctx);
+})
+stackCanvas.addEventListener('draw', (e) => {
+    let point = e.detail.point
+    let ctx = this.ctx;
 
-draw(BLOCK_I, mainCtx, BLOCK_I._color);
+    drawPoint(point, ctx);
+})
+stackCanvas.addEventListener('erase', (e) => {
+    let point = e.detail.point
+    let ctx = this.ctx;
+    erasePoint(point, ctx);
+})
