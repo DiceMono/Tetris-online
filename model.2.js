@@ -1,3 +1,4 @@
+'use strict';
 const mainCanvas = document.getElementById('main');
 const mainCtx = mainCanvas.getContext('2d');
 mainCanvas.ctx = mainCtx;
@@ -24,9 +25,8 @@ const SHAPE_J = [
     [1, [6]]
 ];
 const SHAPE_Z = [
-    [-1, [5]],
-    [0, [5, 6]],
-    [1, [6]]
+    [0, [4, 5]],
+    [1, [5, 6]]
 ];
 const SHAPE_O = [
     [0, [5, 6]],
@@ -101,17 +101,8 @@ class Point extends Map {
             this.set(layer, line);
         });
     }
-    getSortedLayers(isDecending = true) {
-        let sign = (isDecending) ? 1 : -1;
-        let sortedLayers = [];
-        for (let layer of this.keys()) sortedLayers.push(layer);
-        sortedLayers.sort((a, b) => {
-            return sign * (b - a);
-        });
-        return sortedLayers;
-    }
     map(func) {
-        return Array.from(this, func) // func ex) ([layer, line]) => [2 * layer, line];
+        return Array.from(this, func) 
     }
     move(x, y) {
         let result = this.map(([layer, line]) => {
@@ -122,11 +113,14 @@ class Point extends Map {
         this.setMap(new Map(result));
     }
     isConflictWith(point) {
-        this.forEach((line, layer) => {
+        for (let entry of this.entries()) {
+            let layer = entry[0]
+            let line = entry[1]
             if (line.some((x) => {
-                    point.get(layer).includes(x);
-                })) return true;
-        });
+                if (!point.has(layer)) return false;
+                return point.get(layer).includes(x);
+            })) return true;
+        }
     }
 }
 
@@ -156,7 +150,7 @@ class Stack extends Point {
     clearFullLayers() {
         let fullLayers = this._getFullLayers();
         if (!fullLayers) return;
-        result = this.map(([layer, line]) => {
+        let result = this.map(([layer, line]) => {
             if (fullLayers.includes(layer)) return;
             let count = 0;
             fullLayers.forEach((fullLayer) => {
@@ -164,10 +158,8 @@ class Stack extends Point {
             });
             return [layer + count, line];
         });
+        result = result.filter((value) => value !== undefined)
         this.setMap(new Map(result));
-    }
-    stackBlock(block) {
-        this.concat(block);
     }
 }
 class Block extends Point {
@@ -180,8 +172,8 @@ class Block extends Point {
         this._color = color;
     }
     _initShaft(shaft) {
-        this._defaultShaft = shaft
-        this._shaft = [shaft, shaft]
+        this._defaultShaft = [shaft[0], shaft[1]];
+        this._shaft = shaft
     }
     getColor() {
         return this._color;
@@ -191,17 +183,19 @@ class Block extends Point {
         this._resetShaft();
     }
     _resetShaft() {
-        this._shaft = [this._defaultShaft, this._defaultShaft];
+        this._shaft = [this._defaultShaft[0], this._defaultShaft[1]];
     }
     _moveShaft(x, y) {
         this._shaft[0] += x;
         this._shaft[1] += y;
     }
     copy() {
-        return new Block(this._defaultArray, this._defaultShaft, this._color);
+        const defaultShaft = [this._defaultShaft[0], this._defaultShaft[1]]
+        const block = new Block(this._defaultArray, defaultShaft, this._color);
+        return block;
     }
     rotate(isClockWise) {
-        let sign = (isClockWise) ? -1 : 1;
+        let sign = (isClockWise) ? 1 : -1;
         let result = this.copy();
         result.clear();
         this.forEach((line, y) => {
@@ -256,7 +250,7 @@ class BlockGenerator {
     }
     _getRandomBlock() {
         let randomIndex = Math.floor(Math.random() * BLOCK_MAX_NUMBER);
-        return this._blocks[randomIndex];
+        return this._blocks[randomIndex].copy();
     }
     generate() {
         let randomBlock = this._getRandomBlock();
@@ -310,13 +304,28 @@ class Current {
         func(...args);
         this._sendBlockDrawEvent();
     }
+    moveDownAndSendEraseDrawEvent(isDown = true) {
+        const moveDown = this._block.moveDown.bind(this._block);
+        this._sendBlockEraseDrawEventClosure(moveDown, isDown);
+    }
+    moveSideAndSendEraseDrawEvent(isRight) {
+        const moveSide = this._block.moveSide.bind(this._block);
+        this._sendBlockEraseDrawEventClosure(moveSide, isRight)
+    }
+    rotateBlockAndSendEraseDrawEvent(isClockWise) {
+        const rotateBlock = this._block.rotate.bind(this._block);
+        this._sendBlockEraseDrawEventClosure(rotateBlock, isClockWise);
+    }
+    _sendWallDrawEvent() {
+        sendEvent('draw', stackCanvas, this._stack.getStopBlocks())
+    }
     _sendStackEraseEvent() {
         sendEvent('erase', stackCanvas, this._stack);
     }
     _sendStackDrawEvent() {
         sendEvent('draw', stackCanvas, this._stack);
     }
-    _sendStackEraseDrawEvent(func, ...args) {
+    _sendStackEraseDrawEventDecorator(func, ...args) {
         this._sendStackEraseEvent();
         func(...args);
         this._sendStackDrawEvent();
@@ -324,31 +333,49 @@ class Current {
     _stackBlock() {
         this._stack.concat(this._block);
     }
-    _isConflict() {
+    _stackBlockAndSendEraseDrawEvent() {
+        let stackBlock = this._stackBlock.bind(this);
+        this._sendBlockEraseEvent();
+        this._sendStackEraseDrawEventDecorator(stackBlock);
+    }
+    _cleartFullLayersAndSendEraseDrawEvent() {
+        let clearFullLayers = this._stack.clearFullLayers.bind(this._stack);
+        this._sendStackEraseDrawEventDecorator(clearFullLayers);
+    }
+    isConflict() {
         let stopBlocks = this._stack.getStopBlocks()
         if (this._block.isConflictWith(stopBlocks)) return true;
         return false;
     }
-    takeFirstFrame() {
-        this._sendBlockDrawEvent();
-        this._sendStackDrawEvent();
+    _isGameOver() {
+        return this._stack.isConflictWith(new Map([[0, [0,5]]]));
+    }
+    _checkGameOver() {
+        if(this._isGameOver()) alert('Game Over');
     }
     takeOneFrame() {
-        this._moveDownAndSendEraseDrawEvent();
-        if (!this._isConflict()) return;
-        this._stackBlock();
-        this._stack.clearFullLayers();
+        this.moveDownAndSendEraseDrawEvent();
+        if (!this.isConflict()) return;
+        this.moveDownAndSendEraseDrawEvent(false);
+        this._stackBlockAndSendEraseDrawEvent();
+        this._cleartFullLayersAndSendEraseDrawEvent();
         this._resetBlock();
+        this._checkGameOver();
     }
-    _moveDownAndSendEraseDrawEvent() {
-        this._sendBlockEraseEvent();
-        this._block.moveDown();
+    dropBlock() {
+        while (!this.isConflict()) this.moveDownAndSendEraseDrawEvent();
+        this.moveDownAndSendEraseDrawEvent(false);
+        this.takeOneFrame();
+
+    }
+    _takeFirstFrame() {
+        this._sendWallDrawEvent();
         this._sendBlockDrawEvent();
     }
     playGame() {
         let start = 0;
-        let delay = 1000;
-        this.takeFirstFrame();
+        let delay = 500;
+        this._takeFirstFrame();
         const animate = (timestamp) => {
             if (timestamp - start > delay) {
                 this.takeOneFrame();
@@ -356,20 +383,14 @@ class Current {
             }
             requestAnimationFrame(animate)
         }
-
-
         requestAnimationFrame(animate)
     }
 }
 const current = new Current();
-current.playGame();
-
-//viewer
 
 
-const BLOCK_SIZE = 20;
-const BASE_LOCATION_X = 0;
-const BASE_LOCATION_Y = 0;
+const BLOCK_SIZE = 15;
+
 
 const drawPoint = function (point, ctx, color) {
     ctx.fillStyle = color;
@@ -386,25 +407,57 @@ const erasePoint = function (point, ctx) {
         })
     })
 }
+
 mainCanvas.addEventListener('draw', (e) => {
     let point = e.detail.point;
     let color = point.getColor();
-    let ctx = mainCanvas.ctx;
+    let ctx = e.target.ctx;
     drawPoint(point, ctx, color);
 });
 mainCanvas.addEventListener('erase', (e) => {
     let point = e.detail.point
-    let ctx = mainCanvas.ctx;
+    let ctx = e.target.ctx;
     erasePoint(point, ctx);
 })
 stackCanvas.addEventListener('draw', (e) => {
     let point = e.detail.point
-    let ctx = this.ctx;
-
+    let ctx = e.target.ctx;
     drawPoint(point, ctx);
 })
 stackCanvas.addEventListener('erase', (e) => {
     let point = e.detail.point
-    let ctx = this.ctx;
+    let ctx = e.target.ctx;
     erasePoint(point, ctx);
 })
+
+const handleConfilct = (func, movement) => {
+    func(movement)
+    if (current.isConflict()) func(!movement)
+}
+const KEYCODE_RIGHT = 39;
+const KEYCODE_LEFT = 37;
+const KEYCODE_CLOCKWISE = 65;
+const KEYCODE_COUNTERCLOCKWISE = 83;
+const KEYCODE_DOWN = 40;
+const KEYCODE_DROP = 32;
+
+window.addEventListener('keydown', function (e) {
+    switch (e.keyCode) {
+        case KEYCODE_RIGHT: handleConfilct(current.moveSideAndSendEraseDrawEvent.bind(current), true);
+        break;  
+        case KEYCODE_LEFT: handleConfilct(current.moveSideAndSendEraseDrawEvent.bind(current), false);
+        break;      
+        case KEYCODE_CLOCKWISE: handleConfilct(current.rotateBlockAndSendEraseDrawEvent.bind(current), true);
+        break;
+        case KEYCODE_COUNTERCLOCKWISE: handleConfilct(current.rotateBlockAndSendEraseDrawEvent.bind(current), false);
+        break;
+        case KEYCODE_DOWN: handleConfilct(current.moveDownAndSendEraseDrawEvent.bind(current), true);
+        break;
+        case KEYCODE_DROP: current.dropBlock();
+    }
+});
+
+
+
+current.playGame();
+//메서드 배치를 어떤식으로 하는게 좋을까? 목차처럼? 중요도순? 
