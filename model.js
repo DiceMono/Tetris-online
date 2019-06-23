@@ -8,6 +8,11 @@ const START_LOCATION_Y = -1;
 const MAX_SCORE = '000000';
 const BLOCK_MAX_NUMBER = 7;
 const NEXT_BLOCKS_NUMBER = 2;
+const BASE_DELAY = 1000;
+const DELAY_PER_LEVEL = 5;
+const MIN_DELAY = 100;
+const BASE_LEVEL = 1;
+const LEVEL_PER_LINE_CLEAR_COUNT = 5;
 const SHAPE_T = [
     [0, [4, 5, 6]],
     [1, [5]]
@@ -129,7 +134,7 @@ class Stack extends Point {
         stopBlocks.concat(this);
         return stopBlocks;
     }
-    _getFullLayers() {
+    getFullLayers() {
         let result = [];
         this.forEach((line, layer) => {
             if (line.length === BLOCK_MAX_WIDTH) {
@@ -139,13 +144,12 @@ class Stack extends Point {
         if (result.length === 0) return false;
         return result;
     }
-    clearFullLayers() {
-        let fullLayers = this._getFullLayers();
-        if (!fullLayers) return;
+    clearFullLayers(layers) {
+        if (!layers) return;
         let result = this.map(([layer, line]) => {
-            if (fullLayers.includes(layer)) return;
+            if (layers.includes(layer)) return;
             let count = 0;
-            fullLayers.forEach((fullLayer) => {
+            layers.forEach((fullLayer) => {
                 if (fullLayer > layer) count++;
             });
             return [layer + count, line];
@@ -253,18 +257,47 @@ class BlockGenerator {
         this._queue.push(randomBlock);
         return this._queue.shift();
     }
-    send
 }
-// level과 score을 분리할까?
+
 class Level {
     constructor() {
         this._init();
     }
     _init() {
-        this._level = 0;
+        this._level = BASE_LEVEL;
+    }
+    getDelay() {
+        let delay = BASE_DELAY - (this._level - 1) * BASE_DELAY / DELAY_PER_LEVEL;
+        if (delay < MIN_DELAY) delay = MIN_DELAY;
+        return delay
+    }
+    up() {
+        this._level++;
+    }
+    toString() {
+        return "Level: " + this._level; 
+    }
+    valueOf() {
+        return this._level;
+    }
+}
+
+class Score {
+    constructor() {
+        this._init();
+    }
+    _init() {
         this._score = 0;
     }
-    addScore(score) {
-        this._score += score;
+    addLineClearScore(lineClearNumber, level) {
+        this._score += level * (Math.pow(3, lineClearNumber) * 10);
+    }
+    addDropScore(distance, level) {
+        this._score += level * distance;
+    }
+    toString() {
+        console.log(this)
+        const string = MAX_SCORE.slice(0, MAX_SCORE.length - this._score.toString.length - 1) + this._score;
+        return string; // ex) "000010"
     }
 }
