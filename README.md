@@ -29,5 +29,11 @@
 
 add change merge fix update improve
 
+## Scoring
+* first level is one
+* if player clears 10 lines, level up.
+* line-clear-score = level * ((3 ^ (lines)) * 10)
+* drop-score = level * (distance)
+
 
 
