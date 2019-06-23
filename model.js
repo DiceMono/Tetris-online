@@ -4,10 +4,10 @@ const BLOCK_MAX_HEIGHT = BLOCK_MAX_WIDTH * 2;
 
 const START_LOCATION_X = 4;
 const START_LOCATION_Y = -1;    
-    
+
 const MAX_SCORE = '000000';
 const BLOCK_MAX_NUMBER = 7;
-const NEXT_BLOCKS_NUMBER = 3;
+const NEXT_BLOCKS_NUMBER = 2;
 const SHAPE_T = [
     [0, [4, 5, 6]],
     [1, [5]]
@@ -52,7 +52,7 @@ const COLORS = (function () {
 const sendEvent = (eventName, target, object) => {
     let event = new CustomEvent(eventName, {
         detail: {
-            point: object
+            object: object
         }
     });
     target.dispatchEvent(event);
@@ -240,6 +240,9 @@ class BlockGenerator {
         }
         this._queue = queue
     }
+    getQueue() {
+        return this._queue;
+    }
     _getRandomBlock() {
         let randomIndex = Math.floor(Math.random() * BLOCK_MAX_NUMBER);
         return this._blocks[randomIndex].copy();
@@ -250,6 +253,7 @@ class BlockGenerator {
         this._queue.push(randomBlock);
         return this._queue.shift();
     }
+    send
 }
 // level과 score을 분리할까?
 class Level {
