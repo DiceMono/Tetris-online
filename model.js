@@ -296,7 +296,6 @@ class Score {
         this._score += level * distance;
     }
     toString() {
-        console.log(this)
         const string = MAX_SCORE.slice(0, MAX_SCORE.length - this._score.toString.length - 1) + this._score;
         return string; // ex) "000010"
     }

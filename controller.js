@@ -89,6 +89,15 @@ class Current {
         let clearFullLayers = this._stack.clearFullLayers.bind(this._stack);
         this._sendStackEraseDrawEventDecorator(clearFullLayers, fullLayers);
     }
+    _makeShadow() {
+        let shadow = new Block(this._block.entries(), [0, 0], this._block.getColor());
+        let stopBlocks = this._stack.getStopBlocks()
+        while (!shadow.isConflictWith(stopBlocks)) {
+            shadow.moveDown()
+        }
+        shadow.moveDown(false);
+        sendEvent('draw', shadowCanvas, shadow)
+    }
     _isLevelUp() {
         if(this._lineClearCount >= LEVEL_PER_LINE_CLEAR_COUNT) return true;
         return false;
@@ -146,6 +155,7 @@ class Current {
         this._takeFirstFrame();
         const animate = (timestamp) => {
             let delay = this._level.getDelay();
+            this._makeShadow();
             if (timestamp - start > delay) {
                 this._takeOneFrame();
                 start = timestamp

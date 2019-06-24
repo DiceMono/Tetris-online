@@ -18,6 +18,11 @@ const scoreCanvas = document.getElementById('score');
 const scoreCtx = scoreCanvas.getContext('2d');
 scoreCanvas.ctx = scoreCtx;
 
+const shadowCanvas = document.getElementById('shadow');
+const shadowCtx = shadowCanvas.getContext('2d');
+shadowCtx.globalAlpha = 0.5;
+shadowCanvas.ctx = shadowCtx;
+
 const BLOCK_SIZE = 15;
 const START_POINT = [-4, 0]
 
@@ -87,7 +92,6 @@ nextBlocksCanvas.addEventListener('draw', (e) => {
     drawNextBlocks(blocks, ctx);
 })
 levelCanvas.addEventListener('draw', (e) => {
-    console.log('level');
     const level = e.detail.object;
     const canvas = e.target;
     const ctx = canvas.ctx;
@@ -95,13 +99,19 @@ levelCanvas.addEventListener('draw', (e) => {
     drawText(level, ctx);
 })
 scoreCanvas.addEventListener('draw', (e) => {
-    console.log('score');
     const score = e.detail.object;
     const canvas = e.target;
     const ctx = canvas.ctx;
-    console.log(ctx)
     resetCanvas(canvas);
     drawText(score, ctx);
+})
+shadowCanvas.addEventListener('draw', (e) => {
+    const point = e.detail.object;
+    const color = point.getColor();
+    const canvas = e.target;
+    const ctx = canvas.ctx;
+    resetCanvas(canvas);
+    drawPoint(point, ctx, color);
 })
 
 //메서드 배치를 어떤식으로 하는게 좋을까? 목차처럼? 중요도순? 

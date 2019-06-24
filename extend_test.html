@@ -1,17 +1,21 @@
+<div>
 <div style="position: relative; left: 0;">
     <canvas id="main" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
     <canvas id="stack" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+    <canvas id="shadow" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 2;"></canvas>
 </div>
-<div style="position: relative; left: 200;">
+<div style="position: relative; left: 200; width: 200px; height: 300px;">
     <div>
         <canvas id="next-blocks" width="200" height="100"></canvas>
     </div>
     <div>
         <canvas id="level" width="200" height="100"></canvas>
     </div>
+    <div>
+        <canvas id="score" width="200" height="100"></canvas>
+    </div>
 </div>
-
-
+</div>
 <script src="model.js"></script>
 <script src="viewer.js"></script>
 <script src="controller.js"></script>
