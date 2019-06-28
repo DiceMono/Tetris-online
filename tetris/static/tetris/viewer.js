@@ -23,21 +23,21 @@ const shadowCtx = shadowCanvas.getContext('2d');
 shadowCtx.globalAlpha = 0.5;
 shadowCanvas.ctx = shadowCtx;
 
-const enemyMainCanvas = document.getElementById('enemy-main');
-const enemyMainCtx = enemyMainCanvas.getContext('2d');
-enemyMainCanvas.ctx = enemyMainCtx;
-
-const enemyStackCanvas = document.getElementById('enemy-stack');
-const enemyStackCtx = enemyStackCanvas.getContext('2d');
-enemyStackCanvas.ctx = enemyStackCtx;
-
-const enemyLevelCanvas = document.getElementById('enemy-level');
-const enemyLevelCtx = enemyLevelCanvas.getContext('2d');
-enemyLevelCanvas.ctx = enemyLevelCtx;
-
-const enemyScoreCanvas = document.getElementById('enemy-score');
-const enemyScoreCtx = enemyScoreCanvas.getContext('2d');
-enemyScoreCanvas.ctx = enemyScoreCtx;
+//const enemyMainCanvas = document.getElementById('enemy-main');
+//const enemyMainCtx = enemyMainCanvas.getContext('2d');
+//enemyMainCanvas.ctx = enemyMainCtx;
+//
+//const enemyStackCanvas = document.getElementById('enemy-stack');
+//const enemyStackCtx = enemyStackCanvas.getContext('2d');
+//enemyStackCanvas.ctx = enemyStackCtx;
+//
+//const enemyLevelCanvas = document.getElementById('enemy-level');
+//const enemyLevelCtx = enemyLevelCanvas.getContext('2d');
+//enemyLevelCanvas.ctx = enemyLevelCtx;
+//
+//const enemyScoreCanvas = document.getElementById('enemy-score');
+//const enemyScoreCtx = enemyScoreCanvas.getContext('2d');
+//enemyScoreCanvas.ctx = enemyScoreCtx;
 
 const BLOCK_SIZE = 15;
 const START_POINT = [-4, 0]
