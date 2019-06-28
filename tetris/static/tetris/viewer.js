@@ -23,6 +23,22 @@ const shadowCtx = shadowCanvas.getContext('2d');
 shadowCtx.globalAlpha = 0.5;
 shadowCanvas.ctx = shadowCtx;
 
+const enemyMainCanvas = document.getElementById('enemy-main');
+const enemyMainCtx = enemyMainCanvas.getContext('2d');
+enemyMainCanvas.ctx = enemyMainCtx;
+
+const enemyStackCanvas = document.getElementById('enemy-stack');
+const enemyStackCtx = enemyStackCanvas.getContext('2d');
+enemyStackCanvas.ctx = enemyStackCtx;
+
+const enemyLevelCanvas = document.getElementById('enemy-level');
+const enemyLevelCtx = enemyLevelCanvas.getContext('2d');
+enemyLevelCanvas.ctx = enemyLevelCtx;
+
+const enemyScoreCanvas = document.getElementById('enemy-score');
+const enemyScoreCtx = enemyScoreCanvas.getContext('2d');
+enemyScoreCanvas.ctx = enemyScoreCtx;
+
 const BLOCK_SIZE = 15;
 const START_POINT = [-4, 0]
 
@@ -30,7 +46,7 @@ const resetCanvas = (canvas) => {
     canvas.ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 const drawPoint = (point, ctx, color) => {
-    ctx.fillStyle = color;
+    if (color) ctx.fillStyle = color;
     point.forEach(function (line, y) {
         line.forEach(function (x) {
             ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);

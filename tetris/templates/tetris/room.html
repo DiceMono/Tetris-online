@@ -1,45 +1,84 @@
 <!DOCTYPE html>
 <html>
 <head>
+    {% load static %}
     <meta charset="utf-8"/>
-    <title>Chat Room</title>
+    <title>Tetris Room</title>
 </head>
 <body>
-    <textarea id="chat-log" cols="100" rows="20"></textarea><br/>
-    <input id="chat-message-input" type="text" size="100"/><br/>
-    <input id="chat-message-submit" type="button" value="Send"/>
+    <button id='start'>start</button>
+
+<div>
+<div style="position: relative; left: 0;">
+    <canvas id="main" class="send" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+    <canvas id="stack" class="send" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+    <canvas id="shadow" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 2;"></canvas>
+</div>
+<div style="position: relative; left: 200px; width: 200px; height: 300px;">
+    <div>
+        <canvas id="next-blocks" width="200" height="100"></canvas>
+    </div>
+    <div>
+        <canvas id="level" class="send" width="200" height="100"></canvas>
+    </div>
+    <div>
+        <canvas id="score" class="send" width="200" height="100"></canvas>
+    </div>
+</div>
+<br>
+<br>
+</div>
+<div id="enemy">
+<div style="position: relative; left: 0;">
+    <canvas id="enemy-main" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+    <canvas id="enemy-stack" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+</div>
+<div style="position: relative; left: 200px; width: 200px; height: 300px;">
+    <div>
+        <canvas id="enemy-level" width="200" height="100"></canvas>
+    </div>
+    <div>
+        <canvas id="enemy-score" width="200" height="100"></canvas>
+    </div>
+</div>
+</div>
 </body>
+<script src="{% static 'tetris/websocket.js' %}"></script>
+<script src="{% static 'tetris/model.js' %}"></script>
+<script src="{% static 'tetris/viewer.js' %}"></script>
+<script src="{% static 'tetris/controller.js' %}"></script>
+<script src="{% static 'tetris/main.js' %}"></script>
 <script>
-    var roomName = {{ room_name_json }};
 
-    var tetrisSocket = new WebSocket(
-        'ws://' + window.location.host +
-        '/ws/tetris/' + roomName + '/');
+    // let tetrisSocket = new WebSocket(
+    //     'ws://' + window.location.host +
+    //     '/ws/tetris/' + roomName + '/');
 
-    tetrisSocket.onmessage = function(e) {
-        var data = JSON.parse(e.data);
-        var message = data['message'];
-        document.querySelector('#chat-log').value += (message + '\n');
-    };
+    // tetrisSocket.onmessage = function(e) {
+    //     let data = JSON.parse(e.data);
+    //     let message = data['message'];
+    //     document.querySelector('#chat-log').value += (message + '\n');
+    // };
 
-    tetrisSocket.onclose = function(e) {
-        console.error('Tetris socket closed unexpectedly');
-    };
+    // tetrisSocket.onclose = function(e) {
+    //     console.error('Tetris socket closed unexpectedly');
+    // };
 
-    document.querySelector('#chat-message-input').focus();
-    document.querySelector('#chat-message-input').onkeyup = function(e) {
-        if (e.keyCode === 13) {  // enter, return
-            document.querySelector('#chat-message-submit').click();
-        }
-    };
+    // document.querySelector('#chat-message-input').focus();
+    // document.querySelector('#chat-message-input').onkeyup = function(e) {
+    //     if (e.keyCode === 13) {  // enter, return
+    //         document.querySelector('#chat-message-submit').click();
+    //     }
+    // };
+    // const canvases = [];
 
-    document.querySelector('#chat-message-submit').onclick = function(e) {
-        var messageInputDom = document.querySelector('#chat-message-input');
-        var message = messageInputDom.value;
-        tetrisSocket.send(JSON.stringify({
-            'message': message
-        }));
-        messageInputDom.value = '';
-    };
+    // document.querySelector('#chat-message-submit').onclick = function(e) {
+    //     let messageInputDom = document.querySelector('#chat-message-input');
+    //     let message = messageInputDom.value;
+    //     tetrisSocket.send(JSON.stringify({
+    //         'message': message
+    //     }));
+    //     messageInputDom.value = '';
+    // };
 </script>
 </html>

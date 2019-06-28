@@ -1,11 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Tetris Room</title>
+</head>
+<body>
 <div>
-<div style="position: relative; left: 0;">
+<div style="position: relative; left: 0; width: 200;">
     <canvas id="main" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
     <canvas id="stack" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
     <canvas id="shadow" width="200" height="400" style="position: absolute; left: 0; top: 0; z-index: 2;"></canvas>
 </div>
-<div style="position: relative; left: 200; width: 200px; height: 300px;">
-    <div>
+<div style="position: relative; left: 200px; width: 200px; height: 300px;">
+    <div width="200">
         <canvas id="next-blocks" width="200" height="100"></canvas>
     </div>
     <div>
@@ -16,6 +23,7 @@
     </div>
 </div>
 </div>
+</body>
 <script src="model.js"></script>
 <script src="viewer.js"></script>
 <script src="controller.js"></script>

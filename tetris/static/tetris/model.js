@@ -82,6 +82,9 @@ class Point extends Map {
             this.set(layer, line);
         });
     }
+    getColor() {
+        return null;
+    }
     setMap(map) {
         this.clear();
         map.forEach((line, layer) => {
@@ -296,7 +299,7 @@ class Score {
         this._score += level * distance;
     }
     toString() {
-        const string = MAX_SCORE.slice(0, MAX_SCORE.length - this._score.toString.length - 1) + this._score;
+        const string = MAX_SCORE.slice(0, MAX_SCORE.length - this._score.toString().length) + this._score;
         return string; // ex) "000010"
     }
 }

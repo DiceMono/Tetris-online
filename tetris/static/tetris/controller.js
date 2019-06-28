@@ -28,6 +28,7 @@ class Current {
     }
     _sendLeveldrawEvent() {
         sendEvent('draw', levelCanvas, this._level.toString());
+        sendSocket(this._level.toString(), 'enemy-level');
     }
     _upLevelAndSendDrawEvent() {
         this._level.up();
@@ -36,6 +37,7 @@ class Current {
     }
     _sendScoreDrawEvent() {
         sendEvent('draw', scoreCanvas, this._score.toString());
+        sendSocket(this._score.toString(), 'enemy-score');
     }
     _sendBlockEraseEvent() {
         sendEvent('erase', mainCanvas, this._block);
@@ -116,8 +118,10 @@ class Current {
     }
     _takeOneFrame() {
         this.moveDownAndSendEraseDrawEvent();
+        sendSocket(this._block, 'enemy-main');
         if (!this.isConflict()) return;
         this.moveDownAndSendEraseDrawEvent(false);
+        sendSocket(this._block, 'enemy-main');
         this._stackBlockAndSendEraseDrawEvent();
         const fullLayers = this._stack.getFullLayers();
         if (fullLayers) {
@@ -127,6 +131,7 @@ class Current {
             this._addLineClearCount(fullLayers.length);
             if(this._isLevelUp()) this._upLevelAndSendDrawEvent();
         }
+        sendSocket(this._stack, 'enemy-stack');
         this._checkGameOver();
         this._resetBlock();
         this._sendBlockDrawEvent();
