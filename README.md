@@ -1,3 +1,5 @@
+![](tetris/static/tetris/tetris_test.gif)
+
 ## Refactoring By MVC Pattern
 
 ## Model
