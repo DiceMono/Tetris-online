@@ -1,3 +1,10 @@
+[솔로 플레이 링크](http://tetris.dicemono.xyz/)
+## 조작 키
+* 시계 회전 : s
+* 반시계 회전 : a
+* 이동 : 방향키
+* 블럭 낙하 : space
+
 ![](tetris/static/tetris/tetris_test.gif)
 
 ## Refactoring By MVC Pattern
