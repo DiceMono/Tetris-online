@@ -76,12 +76,12 @@ class TetrisConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'tetris_%s' % self.room_name
-        print('hi', self.scope)
 
         await self.accept()
         await self.join_room()
         await self.send(text_data=json.dumps({
-            'type': "get_local_token"
+            'type': "get_local_token",
+            'channel': self.channel_name.split('!')[1],
         }))
 
     async def leave_room(self):
